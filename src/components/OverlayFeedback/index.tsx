@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { useWindowDimensions } from "react-native";
+
 import Animated, {
   Easing,
   useSharedValue,
@@ -7,7 +8,9 @@ import Animated, {
   withSequence,
   useAnimatedStyle,
 } from "react-native-reanimated";
+
 import { Canvas, Rect } from "@shopify/react-native-skia";
+
 import { THEME } from "../../styles/theme";
 
 const STATUS = [
@@ -21,7 +24,12 @@ type Props = {
 };
 
 export function OverlayFeedback({ status }: Props) {
+  // amarzenando valor incio com react-native-animated
   const opacity = useSharedValue(0);
+
+  // capturando a altura e largura da tela do dispositivos
+  const { height, width } = useWindowDimensions();
+
   const color = STATUS[status];
 
   const animatedStyle = useAnimatedStyle(() => {
@@ -29,7 +37,6 @@ export function OverlayFeedback({ status }: Props) {
       opacity: opacity.value,
     };
   });
-  const { height, width } = useWindowDimensions();
 
   useEffect(() => {
     opacity.value = withSequence(

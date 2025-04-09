@@ -1,9 +1,12 @@
 import { useEffect, useState } from "react";
-import { Alert, ScrollView, Text, View } from "react-native";
+import { Alert, BackHandler, Text, View } from "react-native";
 
 import { useNavigation, useRoute } from "@react-navigation/native";
 
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
+
+import { Audio } from "expo-av";
+import * as Haptics from "expo-haptics";
 
 import { styles } from "./styles";
 
@@ -72,7 +75,19 @@ export function Quiz() {
     };
   });
 
-  function shakeAnimation() {
+  async function playSound(isCorrect: boolean) {
+    const file = isCorrect
+      ? require("../../assets/correct.mp3")
+      : require("../../assets/wrong.mp3");
+
+    const { sound } = await Audio.Sound.createAsync(file, { shouldPlay: true });
+
+    await sound.setPositionAsync(0);
+    await sound.playAsync();
+  }
+
+  async function shakeAnimation() {
+    await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
     shake.value = withSequence(
       withTiming(3, { duration: 400, easing: Easing.bounce }),
       withTiming(0, undefined, (finished) => {
@@ -121,9 +136,11 @@ export function Quiz() {
 
     // validando se a resposta esta correta
     if (quiz.questions[currentQuestion].correct === alternativeSelected) {
-      setStatusReply(1);
       setPoints((prevState) => prevState + 1);
+      await playSound(true);
+      setStatusReply(1);
     } else {
+      await playSound(false);
       shakeAnimation();
       setStatusReply(2);
     }
@@ -216,6 +233,15 @@ export function Quiz() {
       handleNextQuestion();
     }
   }, [points]);
+
+  useEffect(() => {
+    const backHandler = BackHandler.addEventListener(
+      "hardwareBackPress",
+      handleStop
+    );
+
+    return () => backHandler.remove();
+  }, []);
 
   if (isLoading) {
     return <Loading />;
